@@ -1,41 +1,48 @@
 version: "3"
 
-# More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
 services:
-
   cloudflared:
+    # container name - can be used when making control commands via docker cli
     container_name: cloudflared
     # Restart on crashes and on reboots
     restart: unless-stopped
+    # the conatiner image being used
     image: cloudflare/cloudflared
+    # command provied to the container to set the tunnel mode to proxy dns requests
     command: proxy-dns
+    #environment variables to configure container
     environment:
-      - "TUNNEL_DNS_UPSTREAM=https://wsi51c3m96.cloudflare-gateway.com/dns-query"
-
+      # DoH endpoint THIS SHOULD BE MODIFIED BASED ON GUIDE
+      - "TUNNEL_DNS_UPSTREAM=https://XXXXXX.cloudflare-gateway.com/dns-query"
       # Listen on an unprivileged port
       - "TUNNEL_DNS_PORT=5053"
-
       # Listen on all interfaces
       - "TUNNEL_DNS_ADDRESS=0.0.0.0"
+    # Make the listening port avalible to other container on docker network
     expose:
       - "5053"
   pihole:
     container_name: pihole
     image: pihole/pihole:latest
+    # listen on port 53 for DNS queries and 80 for the management web interface
     ports:
       - "53:53/tcp"
       - "53:53/udp"
       - "80:80/tcp"
     environment:
       TZ: 'America/New_York'
+      # password for the web interface
       WEBPASSWORD: 'connect-2022'
+      # set the upstream server to be the cloudflared service created above on port 5053
       PIHOLE_DNS_: cloudflared#5053
     # Volumes store your data between container upgrades
     volumes:
       - './etc-pihole:/etc/pihole'
       - './etc-dnsmasq.d:/etc/dnsmasq.d'        
     restart: unless-stopped
+    # ensure that the cloudflared service is started before pihole
     depends_on:
       - cloudflared
+    # link the containers in the docker network
     links:
       - couldflared
