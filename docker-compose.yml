@@ -45,4 +45,4 @@ services:
       - cloudflared
     # link the containers in the docker network
     links:
-      - couldflared
+      - cloudflared
